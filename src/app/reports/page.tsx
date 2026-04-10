@@ -24,8 +24,8 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const [rr, sr] = await Promise.all([listReports(), listSimulations()]);
-      setReports(rr.reports);
-      setSimulations(sr.simulations);
+      setReports(rr?.reports ?? []);
+      setSimulations(sr?.simulations ?? []);
     } finally { setLoading(false); }
   };
 

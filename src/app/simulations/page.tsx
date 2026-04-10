@@ -27,8 +27,8 @@ export default function SimulationsPage() {
     setLoading(true);
     try {
       const [sr, pr] = await Promise.all([listSimulations(), listProjects()]);
-      setSimulations(sr.simulations);
-      setProjects(pr.projects);
+      setSimulations(sr?.simulations ?? []);
+      setProjects(pr?.projects ?? []);
     } finally { setLoading(false); }
   };
 

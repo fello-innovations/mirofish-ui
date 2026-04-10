@@ -24,7 +24,7 @@ export default function ProjectsPage() {
     setLoading(true);
     try {
       const r = await listProjects();
-      setProjects(r.projects);
+      setProjects(r?.projects ?? []);
     } finally {
       setLoading(false);
     }
