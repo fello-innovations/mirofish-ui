@@ -27,8 +27,8 @@ export default function SimulationsPage() {
     setLoading(true);
     try {
       const [sr, pr] = await Promise.all([listSimulations(), listProjects()]);
-      setSimulations(sr?.simulations ?? []);
-      setProjects(pr?.projects ?? []);
+      setSimulations(sr ?? []);
+      setProjects(pr ?? []);
     } finally { setLoading(false); }
   };
 
@@ -36,7 +36,7 @@ export default function SimulationsPage() {
 
   const fetchRunStatus = async (simId: string) => {
     try { const s = await getRunStatus(simId); setRunStatuses((p) => ({ ...p, [simId]: s })); } catch {}
-    try { const t = await getTimeline(simId); setTimelines((p) => ({ ...p, [simId]: t.timeline })); } catch {}
+    try { const tl = await getTimeline(simId); setTimelines((p) => ({ ...p, [simId]: tl ?? [] })); } catch {}
   };
 
   const handleCreate = async (e: React.FormEvent) => {

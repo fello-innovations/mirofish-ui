@@ -24,7 +24,7 @@ export default function ProjectsPage() {
     setLoading(true);
     try {
       const r = await listProjects();
-      setProjects(r?.projects ?? []);
+      setProjects(r ?? []);
     } finally {
       setLoading(false);
     }
@@ -37,9 +37,9 @@ export default function ProjectsPage() {
     while (!done) {
       await new Promise((r) => setTimeout(r, 2000));
       try {
-        const r = await getTask(taskId);
-        setTaskStatus((p) => ({ ...p, [taskId]: r.task }));
-        if (r.task.status === "completed" || r.task.status === "failed") {
+        const task = await getTask(taskId);
+        setTaskStatus((p) => ({ ...p, [taskId]: task }));
+        if (task.status === "completed" || task.status === "failed") {
           done = true;
           load();
         }
@@ -53,12 +53,11 @@ export default function ProjectsPage() {
     setCreating(true);
     try {
       const fd = new FormData();
-      fd.append("name", projectName);
-      fd.append("simulation_requirement", simRequirement);
+      fd.append("project_name", projectName);
+      fd.append("simulation_requirement", simRequirement || "General analysis");
       files.forEach((f) => fd.append("files", f));
-      const r = await generateOntology(fd);
+      await generateOntology(fd);
       await load();
-      pollTask(r.task_id);
       setProjectName(""); setFiles([]); setSimRequirement(""); setExpanded(null);
     } catch (err) { alert(String(err)); } finally { setCreating(false); }
   };
@@ -157,7 +156,7 @@ export default function ProjectsPage() {
               </div>
               <div className="mt-2 text-xs text-slate-500 flex gap-3 flex-wrap">
                 <span className="font-mono">{p.project_id.slice(0, 12)}…</span>
-                {p.files?.length > 0 && <span>{p.files.length} file(s)</span>}
+                {Array.isArray(p.files) && p.files.length > 0 && <span>{p.files.length} file(s)</span>}
                 {p.total_text_length && <span>{p.total_text_length.toLocaleString()} chars</span>}
                 {p.graph_id && <span>graph: {p.graph_id.slice(0, 8)}…</span>}
               </div>

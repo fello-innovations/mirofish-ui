@@ -23,9 +23,9 @@ export default function Dashboard() {
     checkHealth()
       .then(() => setHealth("ok"))
       .catch(() => setHealth("error"));
-    listProjects().then((r) => setProjects(r?.projects ?? [])).catch(() => {});
-    listSimulations().then((r) => setSimulations(r?.simulations ?? [])).catch(() => {});
-    listReports().then((r) => setReports(r?.reports ?? [])).catch(() => {});
+    listProjects().then((r) => setProjects(r ?? [])).catch(() => {});
+    listSimulations().then((r) => setSimulations(r ?? [])).catch(() => {});
+    listReports().then((r) => setReports(r ?? [])).catch(() => {});
   }, []);
 
   const cards = [

@@ -24,8 +24,8 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const [rr, sr] = await Promise.all([listReports(), listSimulations()]);
-      setReports(rr?.reports ?? []);
-      setSimulations(sr?.simulations ?? []);
+      setReports(rr ?? []);
+      setSimulations(sr ?? []);
     } finally { setLoading(false); }
   };
 
@@ -36,9 +36,9 @@ export default function ReportsPage() {
     while (!done) {
       await new Promise((r) => setTimeout(r, 3000));
       try {
-        const r = await getReportProgress(reportId);
-        setProgress((p) => ({ ...p, [reportId]: r.progress }));
-        if (r.progress >= 100) { done = true; load(); }
+        const prog = await getReportProgress(reportId);
+        setProgress((p) => ({ ...p, [reportId]: prog.progress }));
+        if (prog.progress >= 100) { done = true; load(); }
       } catch { done = true; }
     }
   };
@@ -60,8 +60,8 @@ export default function ReportsPage() {
     setExpanded(reportId);
     if (!fullReport[reportId]) {
       try {
-        const r = await getReport(reportId);
-        setFullReport((p) => ({ ...p, [reportId]: r.report }));
+        const report = await getReport(reportId);
+        setFullReport((p) => ({ ...p, [reportId]: report }));
       } catch {}
     }
   };

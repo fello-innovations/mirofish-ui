@@ -1,5 +1,17 @@
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
 
+/* ------------------------------------------------------------------ */
+/* The MiroFish backend wraps every response in:                      */
+/*   { success: bool, data: <payload>, error?: string }               */
+/* This helper unwraps it, throwing on failure.                       */
+/* ------------------------------------------------------------------ */
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+  count?: number;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BACKEND}${path}`, {
     ...options,
@@ -12,29 +24,41 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const text = await res.text();
     throw new Error(`API ${path} failed (${res.status}): ${text}`);
   }
-  return res.json();
+  const json: ApiResponse<T> = await res.json();
+  if (json.success === false) {
+    throw new Error(json.error || `API ${path} returned success=false`);
+  }
+  return json.data;
 }
 
 // ── Health ─────────────────────────────────────────────────────────────────
-export const checkHealth = () => request<{ status: string }>("/health");
+export const checkHealth = () =>
+  fetch(`${BACKEND}/health`).then((r) => {
+    if (!r.ok) throw new Error("unhealthy");
+    return r.json() as Promise<{ status: string }>;
+  });
 
 // ── Projects / Graph ───────────────────────────────────────────────────────
 export const listProjects = () =>
-  request<{ projects: Project[] }>("/api/graph/project/list");
+  request<Project[]>("/api/graph/project/list");
 
 export const getProject = (id: string) =>
-  request<{ project: Project }>(`/api/graph/project/${id}`);
+  request<Project>(`/api/graph/project/${id}`);
 
 export const deleteProject = (id: string) =>
-  request<void>(`/api/graph/project/${id}`, { method: "DELETE" });
+  fetch(`${BACKEND}/api/graph/project/${id}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok) throw new Error("delete failed");
+  });
 
 export const generateOntology = (formData: FormData) =>
   fetch(`${BACKEND}/api/graph/ontology/generate`, {
     method: "POST",
     body: formData,
-  }).then((r) => {
-    if (!r.ok) throw new Error(`ontology/generate failed (${r.status})`);
-    return r.json() as Promise<{ project_id: string; task_id: string }>;
+  }).then(async (r) => {
+    const json = await r.json();
+    if (!r.ok || json.success === false)
+      throw new Error(json.error || `ontology/generate failed (${r.status})`);
+    return json.data as { project_id: string; project_name: string };
   });
 
 export const buildGraph = (body: { project_id: string }) =>
@@ -44,14 +68,14 @@ export const buildGraph = (body: { project_id: string }) =>
   });
 
 export const getTask = (id: string) =>
-  request<{ task: Task }>(`/api/graph/task/${id}`);
+  request<Task>(`/api/graph/task/${id}`);
 
 export const getGraphData = (graphId: string) =>
   request<GraphData>(`/api/graph/data/${graphId}`);
 
 // ── Simulations ────────────────────────────────────────────────────────────
 export const listSimulations = () =>
-  request<{ simulations: Simulation[] }>("/api/simulation/list");
+  request<Simulation[]>("/api/simulation/list");
 
 export const createSimulation = (body: {
   project_id: string;
@@ -64,7 +88,7 @@ export const createSimulation = (body: {
   });
 
 export const getSimulation = (id: string) =>
-  request<{ simulation: Simulation }>(`/api/simulation/${id}`);
+  request<Simulation>(`/api/simulation/${id}`);
 
 export const prepareSimulation = (body: { simulation_id: string }) =>
   request<{ task_id: string }>("/api/simulation/prepare", {
@@ -92,7 +116,7 @@ export const getRunStatus = (id: string) =>
   request<RunStatus>(`/api/simulation/${id}/run-status`);
 
 export const getTimeline = (id: string) =>
-  request<{ timeline: TimelineEntry[] }>(`/api/simulation/${id}/timeline`);
+  request<TimelineEntry[]>(`/api/simulation/${id}/timeline`);
 
 export const interviewAll = (body: {
   simulation_id: string;
@@ -105,7 +129,7 @@ export const interviewAll = (body: {
 
 // ── Reports ────────────────────────────────────────────────────────────────
 export const listReports = () =>
-  request<{ reports: Report[] }>("/api/report/list");
+  request<Report[]>("/api/report/list");
 
 export const generateReport = (body: { simulation_id: string }) =>
   request<{ report_id: string; task_id: string }>("/api/report/generate", {
@@ -114,7 +138,7 @@ export const generateReport = (body: { simulation_id: string }) =>
   });
 
 export const getReport = (id: string) =>
-  request<{ report: Report }>(`/api/report/${id}`);
+  request<Report>(`/api/report/${id}`);
 
 export const getReportProgress = (id: string) =>
   request<{ progress: number; message: string }>(
@@ -136,7 +160,7 @@ export interface Project {
   project_id: string;
   name: string;
   status: string;
-  files: string[];
+  files: { filename: string; size: number }[];
   total_text_length?: number;
   graph_id?: string;
   error?: string;

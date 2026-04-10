@@ -25,8 +25,8 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    listReports().then((r) => setReports(r?.reports ?? [])).catch(() => {});
-    listSimulations().then((r) => setSimulations(r?.simulations ?? [])).catch(() => {});
+    listReports().then((r) => setReports(r ?? [])).catch(() => {});
+    listSimulations().then((r) => setSimulations(r ?? [])).catch(() => {});
   }, []);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
